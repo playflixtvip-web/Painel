@@ -96,7 +96,7 @@
 
     <script>
         const FIREBASE = "https://cloneflix-16f9c-default-rtdb.firebaseio.com";
-        const PAINEL_URL = "https://painel-rose-zeta.vercel.app/";
+        const PAINEL_URL = "https://painel-rose-zeta.app/"; // URL do seu painel atualizada conforme contexto anterior
         var SES = {};
 
         function validarSenha(senha) {
@@ -109,10 +109,22 @@
             return true;
         }
 
+        // FUNÇÃO ATUALIZADA COM O LINK DO APLICATIVO
         function copiarDadosManual(u, p, telas, expira) {
-            const msg = `🍿 *CLONEFLIX - ACESSO*\n\n👤 *Usuário:* ${u}\n🔑 *Senha:* ${p}\n📺 *Telas:* ${telas}\n📅 *Vencimento:* ${new Date(expira).toLocaleString('pt-BR')}\n\n*Bom entretenimento!*`;
-            navigator.clipboard.writeText(msg);
-            alert("Dados do Usuário copiados!");
+            const linkApp = "https://www.mediafire.com/file/580fmkx9it2w1dz/CLONEFLIX_VIP.apk/file";
+            const msg = `🍿 *CLONEFLIX - ACESSO*\n\n` +
+                        `👤 *Usuário:* ${u}\n` +
+                        `🔑 *Senha:* ${p}\n` +
+                        `📺 *Telas:* ${telas}\n` +
+                        `📅 *Vencimento:* ${new Date(expira).toLocaleString('pt-BR')}\n\n` +
+                        `📥 *Baixe nosso App:* ${linkApp}\n\n` +
+                        `*Bom entretenimento!*`;
+            
+            navigator.clipboard.writeText(msg).then(() => {
+                alert("Dados do Usuário e Link do App copiados!");
+            }).catch(err => {
+                alert("Erro ao copiar: ", err);
+            });
         }
 
         function copiarDadosMaster(u, p, credits) {
