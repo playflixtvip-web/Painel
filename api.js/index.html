@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CLONEFLIX - GESTÃO CENTRAL</title>
+    <style>
+        :root { --red: #E50914; --bg: #000; --card: #141414; --yellow: #f1c40f; --green: #27ae60; --blue: #2980b9; --purple: #8e44ad; }
+        body { background: var(--bg); color: #fff; font-family: Arial, sans-serif; margin: 0; }
+        header { padding: 15px; border-bottom: 2px solid var(--red); display: flex; justify-content: space-between; align-items: center; background: #000; }
+        .logo { font-size: 20px; font-weight: 900; color: var(--red); }
+        .stats { background: #111; padding: 8px 15px; font-size: 11px; display: flex; gap: 15px; color: #aaa; border-bottom: 1px solid #222; }
+        .container { padding: 15px; max-width: 1200px; margin: auto; }
+        .card-form { background: var(--card); padding: 15px; border-radius: 8px; border: 1px solid #333; margin-bottom: 20px; }
+        .input-adm { width: 100%; padding: 10px; margin-bottom: 8px; background: #222; border: 1px solid #444; color: #fff; border-radius: 4px; box-sizing: border-box; }
+        .btn { border: none; padding: 12px; border-radius: 4px; font-weight: bold; color: #fff; cursor: pointer; text-transform: uppercase; width: 100%; }
+        .user-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 12px; }
+        .user-card { background: #111; padding: 15px; border-radius: 10px; border: 1px solid #333; position: relative; }
+        .status-label { float: right; font-size: 10px; font-weight: bold; padding: 3px 8px; border-radius: 3px; text-transform: uppercase; }
+        .owner-tag { font-size: 10px; color: var(--yellow); background: rgba(241, 196, 15, 0.1); padding: 2px 5px; border-radius: 3px; display: inline-block; margin-bottom: 5px; border: 1px solid rgba(241, 196, 15, 0.3); }
+        .user-info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; margin: 12px 0; color: #ccc; }
+        .user-info div { background: #1a1a1a; padding: 6px; border-radius: 4px; border: 1px solid #222; }
+        .btn-adm-group { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+        .btn-adm { border: none; padding: 10px 5px; border-radius: 4px; font-size: 9px; font-weight: bold; color: #fff; text-transform: uppercase; cursor: pointer; }
+        #login-ui { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; }
+    </style>
+</head>
+<body>
+
+    <div id="login-ui">
+        <div style="width: 85%; max-width: 340px; background: #111; padding: 35px; border-radius: 12px; text-align: center; border: 1px solid #333;">
+            <h1 style="color:var(--red); margin-bottom: 30px;">CLONEFLIX</h1>
+            <input type="text" id="user-acc" placeholder="Usuário Master" class="input-adm">
+            <input type="password" id="pass-acc" placeholder="Senha Master" class="input-adm">
+            <button onclick="autenticar()" class="btn" style="background:var(--red)">ACESSAR PAINEL</button>
+        </div>
+    </div>
+
+    <div id="app-ui" style="display:none;">
+        <header>
+            <div class="logo">CLONEFLIX <span id="tag-role" style="font-size:10px; border:1px solid var(--red); padding:2px 5px; vertical-align: middle;"></span></div>
+            <button onclick="location.reload()" style="background:none; border:none; color:#666; font-weight: bold;">SAIR</button>
+        </header>
+        
+        <div class="stats">
+            <span>PAINEL: <b id="op-name"></b></span>
+            <span>CRÉDITOS: <b id="op-credits" style="color:var(--green)"></b></span>
+        </div>
+
+        <div class="container">
+            
+            <div id="server-config-section" style="display:none;" class="card-form">
+                <h3 style="margin-top:0; font-size:14px; color:var(--purple)">SERVIDOR IPTV PRINCIPAL</h3>
+                <input type="text" id="server-dns" placeholder="DNS" class="input-adm">
+                <div style="display:flex; gap:8px;">
+                    <input type="text" id="server-user" placeholder="Usuário IPTV" class="input-adm">
+                    <input type="text" id="server-pass" placeholder="Senha IPTV" class="input-adm">
+                </div>
+                <button onclick="salvarDNS()" class="btn" style="background:var(--purple)">ATUALIZAR SERVIDOR</button>
+            </div>
+
+            <div class="card-form">
+                <h3 id="form-title" style="margin-top:0; font-size:14px; color:var(--red)">CRIAR NOVO ACESSO</h3>
+                <input type="hidden" id="edit-id">
+                <div style="display:flex; gap:8px;">
+                    <input type="text" id="new-u" placeholder="Usuário" class="input-adm">
+                    <input type="text" id="new-p" placeholder="Senha" class="input-adm">
+                </div>
+                <div id="adm-fields" style="display:none; gap:8px;">
+                    <input type="number" id="new-days" placeholder="Adicionar Dias" class="input-adm">
+                    <input type="number" id="new-screens" placeholder="Telas" class="input-adm">
+                </div>
+                <button onclick="salvarUsuario()" id="btn-main-action" class="btn" style="background:var(--green)">SALVAR CLIENTE</button>
+                <button onclick="cancelarEdicao()" id="btn-cancel" style="display:none; background:none; border:none; color:#888; font-size:11px; margin-top:10px; width:100%; cursor: pointer;">← CANCELAR / VOLTAR PARA TESTE</button>
+            </div>
+
+            <div id="adm-only-section" style="display:none;" class="card-form">
+                <h3 id="sub-title" style="margin-top:0; font-size:14px; color:var(--blue)">SUB-MASTERS</h3>
+                <input type="hidden" id="edit-sub-id">
+                <div style="display:flex; gap:8px;">
+                    <input type="text" id="sub-u" placeholder="Usuário" class="input-adm">
+                    <input type="text" id="sub-p" placeholder="Senha" class="input-adm">
+                    <input type="number" id="sub-c" placeholder="Créditos" class="input-adm">
+                </div>
+                <button onclick="salvarSub()" id="btn-sub-action" class="btn" style="background:var(--blue)">CRIAR REVENDEDOR</button>
+                <div id="lista-subs" style="margin-top:15px;"></div>
+            </div>
+
+            <input type="text" id="busca" placeholder="🔍 Buscar na lista..." class="input-adm" oninput="carregarUsuarios()" style="margin-bottom: 20px; background: #111;">
+            <div id="lista-usuarios" class="user-grid"></div>
+        </div>
+    </div>
+
+    <script>
+        const FIREBASE = "https://cloneflix-16f9c-default-rtdb.firebaseio.com";
+        var SES = {};
+
+        async function autenticar() {
+            const u = document.getElementById('user-acc').value;
+            const p = document.getElementById('pass-acc').value;
+            if(u === "Rhuan" && p === "270412") { SES = { user: "Rhuan", role: "ADM", credits: "∞" }; return entrar(); }
+            const res = await fetch(`${FIREBASE}/subs.json`).then(r => r.json());
+            for(let id in res) {
+                if(res[id] && res[id].user === u && res[id].pass === p) {
+                    if(res[id].status === 'bloqueado') return alert("Sua revenda está bloqueada!");
+                    SES = res[id]; SES.id = id; SES.role = "SUB"; return entrar();
+                }
+            }
+            alert("Acesso Negado!");
+        }
+
+        function entrar() {
+            document.getElementById('login-ui').style.display = 'none';
+            document.getElementById('app-ui').style.display = 'block';
+            document.getElementById('op-name').innerText = SES.user;
+            document.getElementById('op-credits').innerText = SES.credits;
+            document.getElementById('tag-role').innerText = SES.role;
+            if(SES.role === "ADM") { 
+                document.getElementById('adm-only-section').style.display = 'block';
+                document.getElementById('server-config-section').style.display = 'block';
+                carregarSubs(); carregarServidor();
+            }
+            carregarUsuarios();
+        }
+
+        async function carregarServidor() {
+            const res = await fetch(`${FIREBASE}/config.json`).then(r => r.json());
+            if(res && res.server) {
+                document.getElementById('server-dns').value = res.server.url || "";
+                document.getElementById('server-user').value = res.server.u || "";
+                document.getElementById('server-pass').value = res.server.p || "";
+            }
+        }
+
+        async function salvarDNS() {
+            const server = { url: document.getElementById('server-dns').value, u: document.getElementById('server-user').value, p: document.getElementById('server-pass').value };
+            await fetch(`${FIREBASE}/config.json`, { method: 'PATCH', body: JSON.stringify({ server }) });
+            alert("Servidor Atualizado!");
+        }
+
+        async function carregarUsuarios() {
+            const query = document.getElementById('busca').value.toLowerCase();
+            const res = await fetch(`${FIREBASE}/usuarios.json`).then(r => r.json());
+            const list = document.getElementById('lista-usuarios');
+            list.innerHTML = "";
+            if(!res) return;
+            for(let id in res) {
+                const u = res[id];
+                if(SES.role === "SUB" && u.criadoPor !== SES.user) continue;
+                if(query && !u.user.toLowerCase().includes(query)) continue;
+                const isVencido = u.expira < Date.now();
+                list.innerHTML += `
+                    <div class="user-card">
+                        <span class="owner-tag">POR: ${(u.criadoPor || 'SISTEMA').toUpperCase()}</span>
+                        <span class="status-label" style="background:${isVencido?'#c0392b':'#27ae60'}">${isVencido?'VENCIDO':u.status}</span>
+                        <div style="margin-bottom:5px;"><b>${u.user}</b></div>
+                        <div class="user-info"><div>Senha: ${u.pass}</div><div>Telas: ${u.screens}</div><div style="grid-column: span 2">Vence: ${new Date(u.expira).toLocaleString('pt-BR')}</div></div>
+                        <div class="btn-adm-group">
+                            <button class="btn-adm" style="background:var(--green); grid-column: span 2;" onclick="renovar30Dias('${id}','${u.user}', ${u.screens})">RENOVAR 30 DIAS</button>
+                            <button class="btn-adm" style="background:#2980b9" onclick="editarUsuario('${id}')">EDITAR</button>
+                            <button class="btn-adm" style="background:#d35400" onclick="toggleS('${id}','${u.status}')">STATUS</button>
+                            <button class="btn-adm" style="background:#7f8c8d" onclick="resetT('${id}')">RESET</button>
+                            <button class="btn-adm" style="background:#c0392b" onclick="deletar('${id}')">APAGAR</button>
+                        </div>
+                    </div>`;
+            }
+        }
+
+        // --- SALVAR USUÁRIO (LÓGICA ADM VS SUB) ---
+        async function salvarUsuario() {
+            const id = document.getElementById('edit-id').value;
+            const u = document.getElementById('new-u').value;
+            const p = document.getElementById('new-p').value;
+            if(!u || !p) return alert("Preencha Usuário e Senha!");
+
+            if(!id) { // Novo Teste (1 Hora)
+                const dados = { user: u, pass: p, screens: 1, expira: Date.now() + 3600000, status: 'ativo', criadoPor: SES.user };
+                await fetch(`${FIREBASE}/usuarios.json`, { method: 'POST', body: JSON.stringify(dados) });
+                alert("Teste de 1 hora criado!");
+            } else { // Edição
+                const res = await fetch(`${FIREBASE}/usuarios/${id}.json`).then(r => r.json());
+                let novaExp = res.expira;
+                let novasTelas = res.screens;
+
+                if(SES.role === "ADM") {
+                    const addDias = parseInt(document.getElementById('new-days').value) || 0;
+                    const altTelas = parseInt(document.getElementById('new-screens').value) || res.screens;
+                    if(addDias > 0) novaExp = Math.max(res.expira, Date.now()) + (addDias * 86400000);
+                    novasTelas = altTelas;
+                }
+
+                await fetch(`${FIREBASE}/usuarios/${id}.json`, { method: 'PATCH', body: JSON.stringify({ user: u, pass: p, screens: novasTelas, expira: novaExp }) });
+                alert("Dados atualizados!");
+            }
+            cancelarEdicao(); carregarUsuarios();
+        }
+
+        async function renovar30Dias(id, user, telasAtuais) {
+            let nTelas = prompt("Quantas telas? (1 ou 2)", telasAtuais);
+            if(nTelas !== "1" && nTelas !== "2") return;
+            const custo = parseInt(nTelas);
+            if(SES.role === "SUB" && SES.credits < custo) return alert("Saldo insuficiente!");
+            if(confirm(`Renovar ${user} por 30 dias?\nCusto: ${custo} Crédito(s)`)) {
+                const res = await fetch(`${FIREBASE}/usuarios/${id}.json`).then(r => r.json());
+                const novaExp = Math.max(res.expira, Date.now()) + (30 * 86400000);
+                if(SES.role === "SUB") {
+                    SES.credits -= custo;
+                    await fetch(`${FIREBASE}/subs/${SES.id}.json`, { method: 'PATCH', body: JSON.stringify({ credits: SES.credits }) });
+                    document.getElementById('op-credits').innerText = SES.credits;
+                }
+                await fetch(`${FIREBASE}/usuarios/${id}.json`, { method: 'PATCH', body: JSON.stringify({ expira: novaExp, screens: custo }) });
+                alert("Renovado!"); carregarUsuarios();
+            }
+        }
+
+        async function editarUsuario(id) {
+            const res = await fetch(`${FIREBASE}/usuarios/${id}.json`).then(r => r.json());
+            document.getElementById('edit-id').value = id;
+            document.getElementById('new-u').value = res.user;
+            document.getElementById('new-p').value = res.pass;
+            document.getElementById('form-title').innerText = "EDITANDO CLIENTE";
+            document.getElementById('btn-main-action').innerText = "SALVAR ALTERAÇÕES";
+            document.getElementById('btn-cancel').style.display = 'block';
+            if(SES.role === "ADM") {
+                document.getElementById('adm-fields').style.display = 'flex';
+                document.getElementById('new-screens').value = res.screens;
+            }
+            window.scrollTo(0,0);
+        }
+
+        function cancelarEdicao() {
+            document.getElementById('edit-id').value = "";
+            document.getElementById('new-u').value = "";
+            document.getElementById('new-p').value = "";
+            document.getElementById('new-days').value = "";
+            document.getElementById('adm-fields').style.display = 'none';
+            document.getElementById('form-title').innerText = "GERAR TESTE (1 HORA GRÁTIS)";
+            document.getElementById('btn-main-action').innerText = "SALVAR CLIENTE";
+            document.getElementById('btn-cancel').style.display = 'none';
+        }
+
+        // --- SUB-MASTERS ---
+        async function carregarSubs() {
+            const res = await fetch(`${FIREBASE}/subs.json`).then(r => r.json());
+            const div = document.getElementById('lista-subs'); div.innerHTML = "";
+            if(!res) return;
+            for(let id in res) {
+                const s = res[id];
+                div.innerHTML += `
+                <div style="background:#1a1a1a; padding:12px; margin-bottom:8px; border-radius:8px; border: 1px solid #333;">
+                    <div style="display:flex; justify-content:space-between;"><b>${s.user.toUpperCase()}</b><span style="color:#27ae60">${s.credits} CR</span></div>
+                    <div class="btn-adm-group" style="margin-top:10px;">
+                        <button class="btn-adm" style="background:#2980b9" onclick="editarSub('${id}')">EDITAR</button>
+                        <button class="btn-adm" style="background:#d35400" onclick="toggleSubS('${id}','${s.status}')">STATUS</button>
+                        <button class="btn-adm" style="background:var(--green)" onclick="altCr('${id}', 1)">+1 CR</button>
+                        <button class="btn-adm" style="background:#c0392b" onclick="deletarSub('${id}')">APAGAR</button>
+                    </div>
+                </div>`;
+            }
+        }
+
+        async function salvarSub() {
+            const id = document.getElementById('edit-sub-id').value;
+            const d = { user: document.getElementById('sub-u').value, pass: document.getElementById('sub-p').value, credits: parseInt(document.getElementById('sub-c').value) || 0, status: 'ativo' };
+            await fetch(id ? `${FIREBASE}/subs/${id}.json` : `${FIREBASE}/subs.json`, { method: id ? 'PATCH' : 'POST', body: JSON.stringify(d) });
+            alert("Master salvo!"); cancelarEdicaoSub(); carregarSubs();
+        }
+
+        async function editarSub(id) {
+            const res = await fetch(`${FIREBASE}/subs/${id}.json`).then(r => r.json());
+            document.getElementById('edit-sub-id').value = id;
+            document.getElementById('sub-u').value = res.user;
+            document.getElementById('sub-p').value = res.pass;
+            document.getElementById('sub-c').value = res.credits;
+            document.getElementById('sub-title').innerText = "EDITANDO MASTER";
+            document.getElementById('btn-sub-action').innerText = "ATUALIZAR MASTER";
+            window.scrollTo(0,0);
+        }
+
+        function cancelarEdicaoSub() {
+            document.getElementById('edit-sub-id').value = "";
+            document.getElementById('sub-u').value = ""; document.getElementById('sub-p').value = ""; document.getElementById('sub-c').value = "";
+            document.getElementById('sub-title').innerText = "SUB-MASTERS";
+            document.getElementById('btn-sub-action').innerText = "CRIAR REVENDEDOR";
+        }
+
+        async function altCr(id, val) {
+            const res = await fetch(`${FIREBASE}/subs/${id}.json`).then(r => r.json());
+            await fetch(`${FIREBASE}/subs/${id}.json`, { method: 'PATCH', body: JSON.stringify({ credits: (res.credits || 0) + val }) }); carregarSubs();
+        }
+
+        async function toggleSubS(id, s) { await fetch(`${FIREBASE}/subs/${id}.json`, { method: 'PATCH', body: JSON.stringify({ status: s==='ativo'?'bloqueado':'ativo' }) }); carregarSubs(); }
+        async function toggleS(id, s) { await fetch(`${FIREBASE}/usuarios/${id}.json`, { method: 'PATCH', body: JSON.stringify({ status: s==='ativo'?'bloqueado':'ativo' }) }); carregarUsuarios(); }
+        async function resetT(id) { await fetch(`${FIREBASE}/usuarios/${id}.json`, { method: 'PATCH', body: JSON.stringify({ online_count: 0 }) }); alert("Telas limpas!"); }
+        async function deletar(id) { if(confirm("Apagar?")) { await fetch(`${FIREBASE}/usuarios/${id}.json`, { method: 'DELETE' }); carregarUsuarios(); } }
+        async function deletarSub(id) { if(confirm("Remover Master?")) { await fetch(`${FIREBASE}/subs/${id}.json`, { method: 'DELETE' }); carregarSubs(); } }
+    </script>
+</body>
+</html>
