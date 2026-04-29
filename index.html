@@ -96,7 +96,7 @@
 
     <script>
         const FIREBASE = "https://cloneflix-16f9c-default-rtdb.firebaseio.com";
-        const PAINEL_URL = "https://painel-rose-zeta.vercel.app/"; // URL do seu painel atualizada conforme contexto anterior
+        const PAINEL_URL = "https://painel-rose-zeta.vercel.app/"; 
         var SES = {};
 
         function validarSenha(senha) {
@@ -109,7 +109,6 @@
             return true;
         }
 
-        // FUNÇÃO ATUALIZADA COM O LINK DO APLICATIVO
         function copiarDadosManual(u, p, telas, expira) {
             const linkApp = "https://www.mediafire.com/file/3qv5c54ynq0ruv9/11736_CLONEFLIX.apk/file";
             const msg = `🍿 *CLONEFLIX - ACESSO*\n\n` +
@@ -121,10 +120,8 @@
                         `*Bom entretenimento!*`;
             
             navigator.clipboard.writeText(msg).then(() => {
-                alert("Dados do Usuário e Link do App copiados!");
-            }).catch(err => {
-                alert("Erro ao copiar: ", err);
-            });
+                alert("Dados copiados!");
+            }).catch(err => { alert("Erro ao copiar."); });
         }
 
         function copiarDadosMaster(u, p, credits) {
@@ -187,14 +184,15 @@
                 if(SES.role === "SUB" && u.criadoPor !== SES.user) continue;
                 if(query && !u.user.toLowerCase().includes(query)) continue;
                 const isVencido = u.expira < Date.now();
+                const conectados = Array.isArray(u.active_devices) ? u.active_devices.length : 0;
                 list.innerHTML += `
                     <div class="user-card">
                         <span class="owner-tag">POR: ${(u.criadoPor || 'SISTEMA').toUpperCase()}</span>
                         <span class="status-label" style="background:${isVencido?'#c0392b':'#27ae60'}">${isVencido?'VENCIDO':u.status}</span>
                         <div style="margin-bottom:5px;"><b>${u.user}</b></div>
                         <div class="user-info">
-                            <div>TELAS DISPONÍVEIS: <span class="screen-count">${u.screens || 1}</span></div>
-                            <div>TELAS CONECTADAS: <span class="online-count">${u.online_count || 0}</span></div>
+                            <div>LIMITE TELAS: <span class="screen-count">${u.screens || 1}</span></div>
+                            <div>TELAS LOGADAS: <span class="online-count">${conectados}</span></div>
                             <div style="font-size:10px; color:#888;">Senha: ${u.pass} | Vence: ${new Date(u.expira).toLocaleString('pt-BR')}</div>
                         </div>
                         <div class="btn-adm-group">
@@ -209,6 +207,21 @@
             }
         }
 
+        // RESET DE TELAS CORRIGIDO PARA LIMPAR O ARRAY NO APP
+        async function resetT(id) { 
+            if(confirm("Deseja desconectar todos os aparelhos deste usuário?")) {
+                await fetch(`${FIREBASE}/usuarios/${id}.json`, { 
+                    method: 'PATCH', 
+                    body: JSON.stringify({ 
+                        active_devices: [], 
+                        online_count: 0 
+                    }) 
+                }); 
+                alert("Sessões limpas!"); 
+                carregarUsuarios(); 
+            }
+        }
+
         async function salvarUsuario() {
             const id = document.getElementById('edit-id').value;
             const u = document.getElementById('new-u').value;
@@ -219,9 +232,9 @@
 
             if(!id) {
                 const exp = Date.now() + 3600000;
-                const dados = { user: u, pass: p, screens: 1, expira: exp, status: 'ativo', criadoPor: SES.user, online_count: 0 };
+                const dados = { user: u, pass: p, screens: 1, expira: exp, status: 'ativo', criadoPor: SES.user, active_devices: [], online_count: 0 };
                 await fetch(`${FIREBASE}/usuarios.json`, { method: 'POST', body: JSON.stringify(dados) });
-                alert("Criado com sucesso!");
+                alert("Criado!");
             } else {
                 const res = await fetch(`${FIREBASE}/usuarios/${id}.json`).then(r => r.json());
                 let novaExp = res.expira;
@@ -336,7 +349,6 @@
 
         async function toggleSubS(id, s) { await fetch(`${FIREBASE}/subs/${id}.json`, { method: 'PATCH', body: JSON.stringify({ status: s==='ativo'?'bloqueado':'ativo' }) }); carregarSubs(); }
         async function toggleS(id, s) { await fetch(`${FIREBASE}/usuarios/${id}.json`, { method: 'PATCH', body: JSON.stringify({ status: s==='ativo'?'bloqueado':'ativo' }) }); carregarUsuarios(); }
-        async function resetT(id) { await fetch(`${FIREBASE}/usuarios/${id}.json`, { method: 'PATCH', body: JSON.stringify({ online_count: 0 }) }); alert("Sessões limpas!"); carregarUsuarios(); }
         async function deletar(id) { if(confirm("Apagar?")) { await fetch(`${FIREBASE}/usuarios/${id}.json`, { method: 'DELETE' }); carregarUsuarios(); } }
         async function deletarSub(id) { if(confirm("Remover Master?")) { await fetch(`${FIREBASE}/subs/${id}.json`, { method: 'DELETE' }); carregarSubs(); } }
     </script>
